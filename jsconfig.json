@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src", // This allows the use of @/ to resolve from the 'src' folder
+    "paths": {
+      "@/*": ["*"] // This makes everything inside 'src' resolvable with @/
+    }
+  },
+  "include": ["src/**/*"]
+}
