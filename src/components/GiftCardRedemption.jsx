@@ -53,10 +53,10 @@ export default function GiftCardRedemption() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-yellow-100 p-6">
-      <Card className="w-full max-w-md bg-white shadow-lg rounded-2xl p-6 border-t-4 border-red-500">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
+      <Card className="w-full max-w-md bg-white shadow-lg rounded-2xl p-6 border-t-4 border-primary">
         <CardContent className="space-y-4">
-          <h2 className="text-2xl font-bold text-red-600 text-center">Enter a Gift Card Number</h2>
+          <h2 className="text-2xl font-bold text-primary text-center">Enter a Gift Card Number</h2>
 
           <div className="flex space-x-2">
             {/* 4 Separate Input Boxes for the Gift Card Code */}
@@ -74,7 +74,11 @@ export default function GiftCardRedemption() {
             ))}
           </div>
 
-          <Button onClick={handleSearch} className="mt-3 w-full bg-red-500 hover:bg-red-700 text-white">
+          <p className="text-xs text-gray-500 text-center mt-2">
+            <span className="font-medium text-primary">Note:</span> This is case-sensitive.
+          </p>
+
+          <Button onClick={handleSearch} className="mt-3 w-full bg-primary hover:bg-primaryDark text-white">
             <Search className="inline w-4 h-4 mr-1" /> {/* Add margin-right */}
             Search
           </Button>
@@ -87,7 +91,7 @@ export default function GiftCardRedemption() {
               <p className="text-green-600 font-bold">
                 <CheckCircle className="inline w-4 h-4" /> {cardDetails.status}
               </p>
-              <Button onClick={handleRedeem} className="mt-3 w-full bg-green-500 hover:bg-green-700 text-white">
+              <Button onClick={handleRedeem} className="mt-3 w-full bg-redeemInStore hover:bg-yellow-700 text-white">
                 Redeem In Store
               </Button>
             </div>
@@ -96,9 +100,9 @@ export default function GiftCardRedemption() {
       </Card>
 
       {isManagerAuth && (
-        <Card className="mt-6 w-full max-w-md bg-white shadow-lg rounded-2xl p-6 border-t-4 border-blue-500">
+        <Card className="mt-6 w-full max-w-md bg-white shadow-lg rounded-2xl p-6 border-t-4 border-red-500">
           <CardContent className="space-y-4">
-            <h2 className="text-2xl font-bold text-blue-600 text-center">Manager Authorization</h2>
+            <h2 className="text-2xl font-bold text-red-600 text-center">Manager Authorization</h2>
             <Input
               type="password"
               placeholder="Enter Manager PIN"
@@ -106,9 +110,10 @@ export default function GiftCardRedemption() {
               onChange={(e) => setManagerPin(e.target.value)}
             />
             <div className="flex space-x-2">
-              <Button onClick={handleManagerApproval} className="mt-3 w-full bg-blue-500 hover:bg-blue-700 text-white">
-                <CheckCircle className="inline w-4 h-4" /> Approve
-              </Button>
+            <Button onClick={handleManagerApproval} className="mt-3 w-full bg-red-500 hover:bg-red-700 text-white">
+              <CheckCircle className="inline w-4 h-4" /> Approve
+            </Button>
+
               <Button onClick={() => setIsManagerAuth(false)} className="mt-3 w-full bg-gray-500 hover:bg-gray-700 text-white">
                 <Lock className="inline w-4 h-4" /> Cancel
               </Button>
