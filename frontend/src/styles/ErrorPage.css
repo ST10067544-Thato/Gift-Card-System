@@ -1,0 +1,49 @@
+/* src/styles/ErrorPage.css */
+.error-page {
+  text-align: center;
+  padding: 60px 40px;
+  background-color: #f1f1f1;
+  border-radius: 12px;
+  margin-top: 80px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.error-page h2 {
+  font-size: 32px;
+  color: #333;
+  font-family: 'Roboto', sans-serif;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.error-page p {
+  font-size: 18px;
+  color: #6c757d;
+  font-family: 'Open Sans', sans-serif;
+  margin-bottom: 30px;
+}
+
+.error-page a {
+  display: inline-block;
+  padding: 14px 24px;
+  background-color: #4caf50;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-family: 'Roboto', sans-serif;
+  transition: transform 0.3s, background-color 0.3s ease-in-out;
+}
+
+.error-page a:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+}
+
+.error-page a:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.7);
+}

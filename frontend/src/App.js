@@ -4,6 +4,8 @@ import GiftCardRedemption from "./components/GiftCardRedemption";
 import LoginPage from "./components/LoginPage";
 import NavigationBar from "./components/NavigationBar";
 import AdminPage from "./components/AdminPage";
+import './styles/ErrorPage.css';  // Adjust path based on your project structure
+
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -88,6 +90,22 @@ function App() {
               ) : (
                 <Navigate to="/" />
               )
+            }
+          />
+          
+          {/* Catch-all route for undefined routes */}
+          <Route
+            path="*"
+            element={
+              <div className="error-page">
+                <h2>Oops! Page not found</h2>
+                <p>It seems like you've entered an invalid URL or discovered a hidden page.</p>
+                {isLoggedIn ? (
+                  <Navigate to="/" />
+                ) : (
+                  <Navigate to="/" />
+                )}
+              </div>
             }
           />
         </Routes>
