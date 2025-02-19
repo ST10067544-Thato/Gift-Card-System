@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Cookies from "js-cookie"; // Import js-cookie
 import GiftCardRedemption from "./components/GiftCardRedemption";
 import LoginPage from "./components/LoginPage";
 import NavigationBar from "./components/NavigationBar";
@@ -8,16 +7,17 @@ import AdminPage from "./components/AdminPage";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState(""); // Store user's email
-  const [userRole, setUserRole] = useState(""); // Dynamically set user role
-  const logoUrl = "/logo.png"; // Provide the path to your company logo
+  const [userEmail, setUserEmail] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const logoUrl = "/logo.png"; 
 
-  // Retrieve login info from cookies on app load
+  // Retrieve login info on app load
   useEffect(() => {
-    const email = Cookies.get("userEmail");
-    const role = Cookies.get("userRole");
+    const token = sessionStorage.getItem("authToken");
+    const email = sessionStorage.getItem("userEmail");
+    const role = sessionStorage.getItem("userRole");
 
-    if (email && role) {
+    if (token && email && role) {
       setIsLoggedIn(true);
       setUserEmail(email);
       setUserRole(role);
@@ -25,22 +25,19 @@ function App() {
   }, []);
 
   // Handle login success
-  const handleLoginSuccess = (email, isAdmin) => {
-    // Set cookies for email and role
-    Cookies.set("userEmail", email, { expires: 1 }); // Expires in 1 day
-    Cookies.set("userRole", isAdmin ? "admin" : "store", { expires: 7 });
+  const handleLoginSuccess = (email, role, token) => {
+    sessionStorage.setItem("authToken", token);
+    sessionStorage.setItem("userEmail", email);
+    sessionStorage.setItem("userRole", role);
 
     setIsLoggedIn(true);
     setUserEmail(email);
-    setUserRole(isAdmin ? "admin" : "store");
+    setUserRole(role);
   };
 
   // Handle logout
   const handleLogout = () => {
-    // Remove cookies on logout
-    Cookies.remove("userEmail");
-    Cookies.remove("userRole");
-
+    sessionStorage.clear(); // Clears all session data
     setIsLoggedIn(false);
     setUserEmail("");
     setUserRole("");
@@ -49,20 +46,18 @@ function App() {
   return (
     <BrowserRouter>
       <div>
-        {/* Render the navigation bar only if the user is logged in */}
+        {/* Show the navigation bar only if the user is logged in */}
         {isLoggedIn && (
           <NavigationBar
             isLoggedIn={isLoggedIn}
             userEmail={userEmail}
             logoUrl={logoUrl}
-            onLogout={handleLogout} // Pass the logout function to NavigationBar
-            userRole={userRole} // Pass userRole to NavigationBar
+            onLogout={handleLogout}
+            userRole={userRole}
           />
         )}
 
-        {/* Define routes */}
         <Routes>
-          {/* Redirect to login if not logged in */}
           <Route
             path="/"
             element={
@@ -75,7 +70,6 @@ function App() {
               )
             }
           />
-          {/* Gift Card Redemption Page - Accessible to both admins and store users */}
           <Route
             path="/gift-card"
             element={
@@ -86,7 +80,6 @@ function App() {
               )
             }
           />
-          {/* Admin Page */}
           <Route
             path="/admin"
             element={

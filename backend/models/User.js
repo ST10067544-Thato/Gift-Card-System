@@ -1,12 +1,23 @@
-// models/User.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema(
-  {
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+// Define a User schema
+const userSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: [true, 'Please add an email'],
+    unique: true,
+    trim: true,
   },
-  { timestamps: true }
-);
+  password: {
+    type: String,
+    required: [true, 'Please add a password'],
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'store'],  // Only admin and store roles
+    default: 'store',          // Default to 'store' for new users
+  },
+}, { timestamps: true });
 
-module.exports = mongoose.model("User", userSchema);
+// Export the User model
+module.exports = mongoose.model('User', userSchema);

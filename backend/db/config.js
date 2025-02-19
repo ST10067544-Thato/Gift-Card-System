@@ -1,20 +1,14 @@
-//config.js
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // Get the MongoDB URI and database name from environment variables
-    const ATLAS_URI = process.env.ATLAS_URI;
-    const MONGODB_DB = process.env.MONGODB_DB; // Get the database name
-
-    // Attempt to connect to the MongoDB server using the provided URI and database name
-    await mongoose.connect(ATLAS_URI, {
-      dbName: MONGODB_DB, // Use the database name from the environment variable
+    await mongoose.connect(process.env.ATLAS_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
-    console.log('mongoDB is CONNECTED!!! :)');
+    console.log('✅ MongoDB Connected');
   } catch (err) {
-    console.error('MongoDB connection error:', err);
-    // Exit the process with a non-zero status code (1) to indicate failure
+    console.error('❌ MongoDB Connection Error:', err);
     process.exit(1);
   }
 };
