@@ -27,7 +27,7 @@ function App() {
   // Handle login success
   const handleLoginSuccess = (email, isAdmin) => {
     // Set cookies for email and role
-    Cookies.set("userEmail", email, { expires: 7 }); // Expires in 7 days
+    Cookies.set("userEmail", email, { expires: 1 }); // Expires in 1 day
     Cookies.set("userRole", isAdmin ? "admin" : "store", { expires: 7 });
 
     setIsLoggedIn(true);
