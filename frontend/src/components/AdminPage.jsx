@@ -1,5 +1,5 @@
 // src/components/AdminPage.jsx
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "./ui/card";
 import DateFilter from "./DateFilter";
 import Papa from "papaparse";
@@ -28,9 +28,10 @@ const AdminPage = () => {
   const itemsPerPage = 6; // Number of items displayed per page
 
   // Debounced function to search for gift cards based on the code
-  const debouncedSearch = useCallback(debounce((value) => {
+  const debouncedSearch = debounce((value) => {
     setSearchTerm(value);
-  }, 500), []);
+  }, 500);
+  
 
   // Filter cards by date based on the selected filter option (year, month, or exact date)
   const filterByDate = (card) => {
