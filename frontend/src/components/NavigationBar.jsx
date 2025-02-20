@@ -17,54 +17,63 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
 
   // Toggles mobile menu
   const toggleMenu = useCallback(() => {
-    setMenuState(prev => ({ ...prev, isMenuOpen: !prev.isMenuOpen }));
+    setMenuState((prev) => ({ ...prev, isMenuOpen: !prev.isMenuOpen }));
   }, []);
 
   // Toggles profile dropdown
   const toggleDropdown = useCallback(() => {
-    setMenuState(prev => ({ ...prev, isDropdownOpen: !prev.isDropdownOpen }));
+    setMenuState((prev) => ({ ...prev, isDropdownOpen: !prev.isDropdownOpen }));
+  }, []);
+
+  // Handles close menu
+  const closeMenus = useCallback(() => {
+    setMenuState({ isMenuOpen: false, isDropdownOpen: false, isLogoutConfirmOpen: false });
   }, []);
 
   // Handles logout confirmation popup
   const handleLogoutConfirmation = useCallback(() => {
-    setMenuState(prev => ({ ...prev, isLogoutConfirmOpen: true, isDropdownOpen: false }));
+    setMenuState((prev) => ({ ...prev, isLogoutConfirmOpen: true, isDropdownOpen: false }));
   }, []);
 
   // Cancels logout confirmation
   const handleLogoutCancel = useCallback(() => {
-    setMenuState(prev => ({ ...prev, isLogoutConfirmOpen: false }));
-  }, []);
+    setMenuState((prev) => ({
+      ...prev,
+      isLogoutConfirmOpen: false,
+      isMenuOpen: false, // Close mobile menu if open
+    }));
+  }, []);  
 
   // Confirms logout
   const handleLogoutConfirm = useCallback(() => {
-    setMenuState(prev => ({ ...prev, isLogoutConfirmOpen: false }));
-    onLogout(); // Execute logout action
+    setMenuState({ isMenuOpen: false, isDropdownOpen: false, isLogoutConfirmOpen: false });
+    onLogout();
   }, [onLogout]);
 
   // Check if current page is the Gift Card page
   const isGiftCardPage = location.pathname === "/gift-card";
 
-  // Closes dropdown when clicking outside
+  // Closes dropdown & menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        dropdownRef.current && !dropdownRef.current.contains(event.target) &&
-        menuRef.current && !menuRef.current.contains(event.target)
+        !dropdownRef.current?.contains(event.target) &&
+        !menuRef.current?.contains(event.target)
       ) {
-        setMenuState(prev => ({ ...prev, isDropdownOpen: false }));
+        closeMenus();
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [closeMenus]);
 
   return (
     <nav className="w-full bg-white shadow-lg p-4 fixed top-0 left-0 z-10" ref={menuRef}>
       {/* Main Navigation Container */}
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         
-        {/* Logo Section */}
+        {/* Logo */}
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
             <img src={logoUrl} alt="Company Logo" className="h-10 cursor-pointer" />
@@ -75,7 +84,7 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
         <div className="hidden md:flex items-center space-x-6">
           {/* Admin Button (Conditional Rendering) */}
           {isLoggedIn && userRole === "admin" && (
-            <Link to={isGiftCardPage ? "/admin" : "/gift-card"}>
+            <Link to={isGiftCardPage ? "/admin" : "/gift-card"} onClick={closeMenus}>
               <Button className="bg-primary text-white px-6 py-3 rounded-lg">
                 {isGiftCardPage ? "Go to Admin Dashboard" : "Redeem a Gift Card"}
               </Button>
@@ -94,16 +103,13 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
                   <ul>
                     {/* Profile Option (Currently Non-Functional) */}
                     <li>
-                      <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
+                      <button onClick={closeMenus} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
                         Profile
                       </button>
                     </li>
                     {/* Logout Option */}
                     <li>
-                      <button 
-                        onClick={handleLogoutConfirmation} 
-                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
-                      >
+                      <button onClick={handleLogoutConfirmation} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
                         Logout
                       </button>
                     </li>
@@ -129,7 +135,7 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
             {/* Admin Button (For Mobile) */}
             {isLoggedIn && userRole === "admin" && (
               <li>
-                <Link to={isGiftCardPage ? "/admin" : "/gift-card"}>
+                <Link to={isGiftCardPage ? "/admin" : "/gift-card"} onClick={closeMenus}>
                   <Button className="w-full bg-primary text-white px-4 py-2 rounded-lg">
                     {isGiftCardPage ? "Go to Admin Dashboard" : "Redeem a Gift Card"}
                   </Button>
@@ -138,15 +144,12 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
             )}
             {/* Profile & Logout (Mobile) */}
             <li>
-              <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
+              <button onClick={closeMenus} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
                 Profile
               </button>
             </li>
             <li>
-              <button 
-                onClick={handleLogoutConfirmation} 
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
-              >
+              <button onClick={handleLogoutConfirmation} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
                 Logout
               </button>
             </li>
