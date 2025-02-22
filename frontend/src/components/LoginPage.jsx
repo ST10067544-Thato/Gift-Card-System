@@ -28,12 +28,12 @@ export default function LoginPage({ onLoginSuccess }) {
     setErrorMessage("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Ensures cookies (if used) are sent securely
+        credentials: "include",
         body: JSON.stringify({
           email: username.trim(),
           password,

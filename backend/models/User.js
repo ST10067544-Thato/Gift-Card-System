@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Define a User schema
 const userSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -14,10 +13,13 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'store'],  // Only admin and store roles
-    default: 'store',          // Default to 'store' for new users
+    enum: ['admin', 'store'],
+    default: 'store',
   },
+  totpSecret: {  // Store the TOTP secret
+    type: String,
+    required: false,
+  }
 }, { timestamps: true });
 
-// Export the User model
 module.exports = mongoose.model('User', userSchema);

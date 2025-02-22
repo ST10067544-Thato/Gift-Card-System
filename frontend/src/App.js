@@ -4,16 +4,15 @@ import GiftCardRedemption from "./components/GiftCardRedemption";
 import LoginPage from "./components/LoginPage";
 import NavigationBar from "./components/NavigationBar";
 import AdminPage from "./components/AdminPage";
-import './styles/ErrorPage.css';  // Adjust path based on your project structure
+import './styles/ErrorPage.css'; 
 
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [userRole, setUserRole] = useState("");
-  const logoUrl = "/logo.png"; 
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
 
-  // Retrieve login info on app load
   useEffect(() => {
     const token = sessionStorage.getItem("authToken");
     const email = sessionStorage.getItem("userEmail");
@@ -24,47 +23,44 @@ function App() {
       setUserEmail(email);
       setUserRole(role);
     }
+
+    setIsLoading(false); // Set loading to false after checking sessionStorage
   }, []);
 
-  // Handle login success
-  const handleLoginSuccess = (email, role, token) => {
-    sessionStorage.setItem("authToken", token);
-    sessionStorage.setItem("userEmail", email);
-    sessionStorage.setItem("userRole", role);
-
-    setIsLoggedIn(true);
-    setUserEmail(email);
-    setUserRole(role);
-  };
-
-  // Handle logout
-  const handleLogout = () => {
-    sessionStorage.clear(); // Clears all session data
-    setIsLoggedIn(false);
-    setUserEmail("");
-    setUserRole("");
-  };
+  if (isLoading) {
+    return <div>Loading...</div>; // Show a loading spinner or message
+  }
 
   return (
     <BrowserRouter>
       <div>
-        {/* Show the navigation bar only if the user is logged in */}
         {isLoggedIn && (
           <NavigationBar
             isLoggedIn={isLoggedIn}
             userEmail={userEmail}
-            logoUrl={logoUrl}
-            onLogout={handleLogout}
+            logoUrl="/logo.png"
+            onLogout={() => {
+              sessionStorage.clear();
+              setIsLoggedIn(false);
+              setUserEmail("");
+              setUserRole("");
+            }}
             userRole={userRole}
           />
         )}
-
         <Routes>
           <Route
             path="/"
             element={
               !isLoggedIn ? (
-                <LoginPage onLoginSuccess={handleLoginSuccess} />
+                <LoginPage onLoginSuccess={(email, role, token) => {
+                  sessionStorage.setItem("authToken", token);
+                  sessionStorage.setItem("userEmail", email);
+                  sessionStorage.setItem("userRole", role);
+                  setIsLoggedIn(true);
+                  setUserEmail(email);
+                  setUserRole(role);
+                }} />
               ) : userRole === "admin" ? (
                 <Navigate to="/admin" />
               ) : (
@@ -92,19 +88,13 @@ function App() {
               )
             }
           />
-          
-          {/* Catch-all route for undefined routes */}
           <Route
             path="*"
             element={
               <div className="error-page">
                 <h2>Oops! Page not found</h2>
                 <p>It seems like you've entered an invalid URL or discovered a hidden page.</p>
-                {isLoggedIn ? (
-                  <Navigate to="/" />
-                ) : (
-                  <Navigate to="/" />
-                )}
+                <Navigate to="/" />
               </div>
             }
           />
