@@ -3,6 +3,7 @@ module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      backgroundColor: ['disabled'],
       colors: {
         primary: "#acbc04", // Custom primary color
         primaryDark: "#9aab03", // Darker version for hover

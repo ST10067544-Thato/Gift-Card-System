@@ -42,7 +42,7 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
       isLogoutConfirmOpen: false,
       isMenuOpen: false, // Close mobile menu if open
     }));
-  }, []);  
+  }, []);
 
   // Confirms logout
   const handleLogoutConfirm = useCallback(() => {
@@ -57,8 +57,10 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        !dropdownRef.current?.contains(event.target) &&
-        !menuRef.current?.contains(event.target)
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) && // Desktop dropdown
+        menuRef.current &&
+        !menuRef.current.contains(event.target) // Menu toggle button
       ) {
         closeMenus();
       }
@@ -72,10 +74,9 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
     <nav className="w-full bg-white shadow-lg p-4 fixed top-0 left-0 z-10" ref={menuRef}>
       {/* Main Navigation Container */}
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        
         {/* Logo */}
         <div className="flex items-center">
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center" onClick={closeMenus}>
             <img src={logoUrl} alt="Company Logo" className="h-10 cursor-pointer" />
           </Link>
         </div>
@@ -101,12 +102,14 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
               {menuState.isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg">
                   <ul>
-                    {/* Profile Option (Currently Non-Functional) */}
-                    <li>
-                      <button onClick={closeMenus} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
-                        Profile
-                      </button>
-                    </li>
+                    {/* Admin Users Page Link */}
+                    {userRole === "admin" && (
+                      <li>
+                        <Link to="/admin/users" onClick={closeMenus} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
+                          Manage Users
+                        </Link>
+                      </li>
+                    )}
                     {/* Logout Option */}
                     <li>
                       <button onClick={handleLogoutConfirmation} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
@@ -134,20 +137,23 @@ export default function NavigationBar({ isLoggedIn, userEmail, userRole, logoUrl
           <ul className="space-y-3">
             {/* Admin Button (For Mobile) */}
             {isLoggedIn && userRole === "admin" && (
-              <li>
-                <Link to={isGiftCardPage ? "/admin" : "/gift-card"} onClick={closeMenus}>
-                  <Button className="w-full bg-primary text-white px-4 py-2 rounded-lg">
-                    {isGiftCardPage ? "Go to Admin Dashboard" : "Redeem a Gift Card"}
-                  </Button>
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link to={isGiftCardPage ? "/admin" : "/gift-card"} onClick={closeMenus}>
+                    <Button className="w-full bg-primary text-white px-4 py-2 rounded-lg">
+                      {isGiftCardPage ? "Go to Admin Dashboard" : "Redeem a Gift Card"}
+                    </Button>
+                  </Link>
+                </li>
+                {/* Admin Users Page Link (Mobile) */}
+                <li>
+                  <Link to="/admin/users" onClick={closeMenus} className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
+                    Manage Users
+                  </Link>
+                </li>
+              </>
             )}
-            {/* Profile & Logout (Mobile) */}
-            <li>
-              <button onClick={closeMenus} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
-                Profile
-              </button>
-            </li>
+            {/* Logout (Mobile) */}
             <li>
               <button onClick={handleLogoutConfirmation} className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
                 Logout

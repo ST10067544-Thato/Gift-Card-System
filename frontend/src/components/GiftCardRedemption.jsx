@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Lock, CheckCircle, Search, XCircle, Info } from "lucide-react";
 
-// Displays gift card details and a redemption button
+// Component to display gift card details and a redemption button
 const GiftCardDetails = ({ card, isDisabled = false, onRedeem, isAdmin = false }) => (
   <div className={`bg-gray-50 p-4 rounded-lg shadow-md mt-4 ${isDisabled ? "opacity-50" : ""}`}>
     <p className="text-gray-700"><strong>Card Code:</strong> {card.code}</p>
@@ -22,20 +23,19 @@ const GiftCardDetails = ({ card, isDisabled = false, onRedeem, isAdmin = false }
   </div>
 );
 
-// Modal for Manager PIN or Admin TOTP verification
+// Modal for Manager or Admin TOTP verification
 const AuthorizationModal = ({
   isAuthRequired,
   onApprove,
   onCancel,
-  pin,
-  setPin,
   totp,
   setTotp,
   error,
+  errorMessage,
   qrCodeUrl,
   secret,
   userRole,
-  userEmail,
+  isLoading,
 }) => (
   isAuthRequired && (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -44,7 +44,12 @@ const AuthorizationModal = ({
           <h2 className="text-2xl font-bold text-red-600 text-center">
             {userRole === "store" ? "Manager Authorization" : "Admin Authorization"}
           </h2>
-          {userRole === "admin" && (
+          {/* TOTP Setup for both Admin and Manager */}
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+            </div>
+          ) : (
             <>
               {qrCodeUrl ? (
                 <>
@@ -52,7 +57,8 @@ const AuthorizationModal = ({
                     <img src={qrCodeUrl} alt="TOTP QR Code" className="w-40 h-40 rounded-lg shadow-lg" />
                   </div>
                   <p className="text-gray-600 text-center mt-4 text-sm">
-                    <Info className="inline w-5 h-5 mr-2 text-red-500" /> Please scan the QR code with your authenticator app, then enter the code below.
+                    <Info className="inline w-5 h-5 mr-2 text-red-500" /> 
+                    Scan the QR code or manually enter the code below into your authenticator app, then enter the generated code here.
                   </p>
                   <div className="bg-gray-100 p-4 rounded-lg mt-4 flex justify-center items-center">
                     <p className="text-sm text-gray-700 font-mono break-all text-center">
@@ -65,27 +71,18 @@ const AuthorizationModal = ({
                   <Info className="inline w-5 h-5 mr-2 text-red-500" /> Your account is already linked to an authenticator app. Enter the code from your app below.
                 </p>
               )}
-              <Input
-                type="text"
-                placeholder="Enter Authentication Code"
-                value={totp}
-                onChange={(e) => setTotp(e.target.value)}
-                className="mt-4 rounded-lg focus:ring-2 focus:ring-red-500"
-              />
             </>
           )}
-          {userRole === "store" && (
-            <Input
-              type="password"
-              placeholder="Enter Manager PIN"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              className="rounded-lg focus:ring-2 focus:ring-red-500"
-            />
-          )}
+          <Input
+            type="text"
+            placeholder="Enter Authentication Code"
+            value={totp}
+            onChange={(e) => setTotp(e.target.value)}
+            className="mt-4 rounded-lg focus:ring-2 focus:ring-red-500"
+          />
           {error && (
             <p className="text-red-500 text-sm flex items-center justify-center mt-4">
-              <XCircle className="w-4 h-4 mr-2" /> Invalid Code, try again.
+              <XCircle className="w-4 h-4 mr-2" /> {errorMessage || "Invalid code, try again."}
             </p>
           )}
           <div className="flex space-x-2 mt-6">
@@ -107,11 +104,13 @@ export default function GiftCardRedemption({ userRole }) {
   const [giftCardCode, setGiftCardCode] = useState("");
   const [cardDetails, setCardDetails] = useState(null);
   const [isAuthRequired, setIsAuthRequired] = useState(false);
-  const [pin, setPin] = useState("");
   const [totp, setTotp] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [error, setError] = useState(false);
   const [secret, setSecret] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   const userEmail = sessionStorage.getItem("userEmail"); // Get email from sessionStorage
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -133,57 +132,69 @@ export default function GiftCardRedemption({ userRole }) {
   // Handle search for gift card details
   const handleSearch = () => {
     if (giftCardCode.length === 4) {
-      setCardDetails({
-        code: `****-****-****-${giftCardCode}`,
-        balance: "R500.00",
-        expiry: "12/31/2025",
-        status: "Active",
-        secondaryCard: `****-****-****-${giftCardCode}`,
-      });
+      setIsSearching(true); // Start loading animation
+
+      // Simulate a delay for fetching data (e.g., 1.5 seconds)
+      setTimeout(() => {
+        setCardDetails({
+          code: `****-****-****-${giftCardCode}`,
+          balance: "R500.00",
+          expiry: "12/31/2025",
+          status: "Active",
+          secondaryCard: `****-****-****-${giftCardCode}`,
+        });
+        setIsSearching(false); // Stop loading animation
+      }, 1500); // Adjust the delay as needed
     } else {
       alert("Please enter exactly 4 characters for the gift card.");
     }
   };
 
-  // Initiate redemption process
+  // Handle closing the authorization modal
+  const handleCloseModal = () => {
+    setIsAuthRequired(false); // Close the modal
+    setTotp(""); // Clear the TOTP input
+    setQrCodeUrl(null); // Reset QR code URL
+    setSecret(null); // Reset secret
+    setError(false); // Clear any errors
+  };
+
+  // Initiate redemption process with Axios
   const handleRedeem = async () => {
     setIsAuthRequired(true);
+    setIsLoading(true);
 
-    if (userRole === "admin") {
-      const response = await fetch(`${API_BASE_URL}/setup-totp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: userEmail }),
+    try {
+      const response = await axios.post(`${API_BASE_URL}/setup-totp`, {
+        email: userEmail.toLowerCase(),
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.hasTotp) {
-        // User has already set up TOTP
-        setQrCodeUrl(null); // Hide QR code
-        setSecret(null); // Clear the secret
+        setQrCodeUrl(null);
+        setSecret(null);
       } else if (data.qrCodeUrl) {
-        // User needs to set up TOTP
         setQrCodeUrl(data.qrCodeUrl);
-        setSecret(data.secret); // Store the secret for manual entry
+        setSecret(data.secret);
       }
+    } catch (error) {
+      setErrorMessage(error.response?.data?.message || error.message);
+      setError(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle approval for redemption
+  // Handle approval for redemption with Axios
   const handleApproval = useCallback(async () => {
-    if (userRole === "admin") {
-      const response = await fetch(`${API_BASE_URL}/verify-totp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: userEmail, code: totp }),
+    try {
+      const response = await axios.post(`${API_BASE_URL}/verify-totp`, {
+        email: userEmail.toLowerCase(),
+        code: totp,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.token) {
         alert("Gift card redeemed successfully!");
@@ -191,16 +202,11 @@ export default function GiftCardRedemption({ userRole }) {
       } else {
         setError(true);
       }
-    } else if (userRole === "store") {
-      const correctPin = "5678"; // Manager PIN
-      if (pin === correctPin) {
-        alert("Gift card redeemed successfully!");
-        resetState();
-      } else {
-        setError(true);
-      }
+    } catch (error) {
+      setErrorMessage(error.response?.data?.message || error.message);
+      setError(true);
     }
-  }, [totp, pin, API_BASE_URL, userEmail, userRole]);
+  }, [totp, API_BASE_URL, userEmail]);
 
   // Reset state after successful redemption
   const resetState = () => {
@@ -208,7 +214,6 @@ export default function GiftCardRedemption({ userRole }) {
     setCardDetails(null);
     setIsAuthRequired(false);
     setTotp("");
-    setPin("");
     setQrCodeUrl(null);
     setError(false);
   };
@@ -239,7 +244,14 @@ export default function GiftCardRedemption({ userRole }) {
           <Button onClick={handleSearch} className="mt-3 w-full bg-primary hover:bg-primaryDark text-white rounded-lg transition-all duration-300">
             <Search className="inline w-4 h-4 mr-2" /> Search
           </Button>
-          {cardDetails && (
+          {/* Loading animation */}
+          {isSearching && (
+            <div className="flex justify-center items-center mt-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
+          {/* Display card details after loading */}
+          {!isSearching && cardDetails && (
             <>
               <GiftCardDetails card={cardDetails} onRedeem={handleRedeem} isAdmin={userRole === "admin"} />
               <GiftCardDetails
@@ -258,16 +270,15 @@ export default function GiftCardRedemption({ userRole }) {
       <AuthorizationModal
         isAuthRequired={isAuthRequired}
         onApprove={handleApproval}
-        onCancel={() => setIsAuthRequired(false)}
-        pin={pin}
-        setPin={setPin}
+        onCancel={handleCloseModal}
         totp={totp}
         setTotp={setTotp}
         error={error}
+        errorMessage={errorMessage}
         qrCodeUrl={qrCodeUrl}
         secret={secret}
         userRole={userRole}
-        userEmail={userEmail}
+        isLoading={isLoading}
       />
     </div>
   );

@@ -4,15 +4,16 @@ import GiftCardRedemption from "./components/GiftCardRedemption";
 import LoginPage from "./components/LoginPage";
 import NavigationBar from "./components/NavigationBar";
 import AdminPage from "./components/AdminPage";
-import './styles/ErrorPage.css'; 
-
+import AdminUsersPage from "./components/AdminUsersPage";
+import './styles/ErrorPage.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
+  const [userEmail, setUserEmail] = useState(""); // Fixed typo here
   const [userRole, setUserRole] = useState("");
   const [isLoading, setIsLoading] = useState(true); // Add loading state
 
+  // Check if the user is logged in on initial load
   useEffect(() => {
     const token = sessionStorage.getItem("authToken");
     const email = sessionStorage.getItem("userEmail");
@@ -27,6 +28,24 @@ function App() {
     setIsLoading(false); // Set loading to false after checking sessionStorage
   }, []);
 
+  // Handle login success
+  const handleLoginSuccess = (email, role, token) => {
+    sessionStorage.setItem("authToken", token);
+    sessionStorage.setItem("userEmail", email);
+    sessionStorage.setItem("userRole", role);
+    setIsLoggedIn(true);
+    setUserEmail(email);
+    setUserRole(role);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    sessionStorage.clear();
+    setIsLoggedIn(false);
+    setUserEmail("");
+    setUserRole("");
+  };
+
   if (isLoading) {
     return <div>Loading...</div>; // Show a loading spinner or message
   }
@@ -39,12 +58,7 @@ function App() {
             isLoggedIn={isLoggedIn}
             userEmail={userEmail}
             logoUrl="/logo.png"
-            onLogout={() => {
-              sessionStorage.clear();
-              setIsLoggedIn(false);
-              setUserEmail("");
-              setUserRole("");
-            }}
+            onLogout={handleLogout}
             userRole={userRole}
           />
         )}
@@ -53,14 +67,7 @@ function App() {
             path="/"
             element={
               !isLoggedIn ? (
-                <LoginPage onLoginSuccess={(email, role, token) => {
-                  sessionStorage.setItem("authToken", token);
-                  sessionStorage.setItem("userEmail", email);
-                  sessionStorage.setItem("userRole", role);
-                  setIsLoggedIn(true);
-                  setUserEmail(email);
-                  setUserRole(role);
-                }} />
+                <LoginPage onLoginSuccess={handleLoginSuccess} />
               ) : userRole === "admin" ? (
                 <Navigate to="/admin" />
               ) : (
@@ -83,6 +90,17 @@ function App() {
             element={
               isLoggedIn && userRole === "admin" ? (
                 <AdminPage />
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+          {/* Add the new route for Admin Users Management */}
+          <Route
+            path="/admin/users"
+            element={
+              isLoggedIn && userRole === "admin" ? (
+                <AdminUsersPage />
               ) : (
                 <Navigate to="/" />
               )

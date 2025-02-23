@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -23,32 +24,47 @@ export default function LoginPage({ onLoginSuccess }) {
       setErrorMessage("Email and Password are required.");
       return;
     }
-
+  
     setIsLoading(true);
     setErrorMessage("");
-
+  
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email: username.trim(),
+      const response = await axios.post(
+        `${API_BASE_URL}/login`,
+        {
+          email: username.trim().toLowerCase(), // Convert email to lowercase
           password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // Include credentials (cookies)
+        }
+      );
+  
+      const data = response.data;
+  
+      if (response.status === 200) {
+        // Extract token, email, and role from the response
+        const { token, email, role } = data;
+  
+        // Store token, email, and role in sessionStorage
+        sessionStorage.setItem("authToken", token);
+        sessionStorage.setItem("userEmail", email);
+        sessionStorage.setItem("userRole", role);
+  
+        // Log the stored values for debugging
+        console.log("Token after login:", token);
+        console.log("Role after login:", role);
+  
+        // Pass email, role, and token to the parent component
+        onLoginSuccess(email, role, token);
+      } else {
         throw new Error(data.message || "Login failed. Check your credentials.");
       }
-
-      onLoginSuccess(username, data.role);
     } catch (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(error.response?.data?.message || error.message);
     } finally {
       setIsLoading(false);
     }

@@ -25,7 +25,11 @@ router.post("/setup-totp", async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    // Convert email to lowercase
+    const lowercaseEmail = email.toLowerCase();
+
+    // Query the database with the lowercase email
+    const user = await User.findOne({ email: lowercaseEmail });
     if (!user) return res.status(400).json({ message: "User not found" });
 
     // If TOTP is already set up, return a message
@@ -37,12 +41,12 @@ router.post("/setup-totp", async (req, res) => {
     const secret = speakeasy.generateSecret({ length: 20 });
 
     // Store the secret temporarily
-    tempSecrets[email] = secret.base32;
+    tempSecrets[lowercaseEmail] = secret.base32;
 
     // Generate the QR code URL
     const otpauthUrl = speakeasy.otpauthURL({
       secret: secret.base32,
-      label: `TK Gift Card System:${email}`,
+      label: `TK Gift Card System:${lowercaseEmail}`,
       issuer: "TK Gift Card System",
       encoding: "base32",
     });
@@ -78,11 +82,15 @@ router.post("/verify-totp", async (req, res) => {
   const { email, code } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    // Convert email to lowercase
+    const lowercaseEmail = email.toLowerCase();
+
+    // Find the user
+    const user = await User.findOne({ email: lowercaseEmail });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     // Use the saved secret or temporary secret
-    const secret = user.totpSecret || tempSecrets[email];
+    const secret = user.totpSecret || tempSecrets[lowercaseEmail];
     if (!secret) {
       return res.status(400).json({ message: "TOTP setup not initiated" });
     }
@@ -101,7 +109,7 @@ router.post("/verify-totp", async (req, res) => {
     if (!user.totpSecret) {
       user.totpSecret = secret;
       await user.save();
-      delete tempSecrets[email]; // Clear the temporary secret
+      delete tempSecrets[lowercaseEmail]; // Clear the temporary secret
     }
 
     // Return token after successful verification
@@ -155,7 +163,7 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { email, password } = req.body;
+    const { email, password, role } = req.body; // Include role in the request body
 
     try {
       if (await User.findOne({ email })) {
@@ -167,22 +175,77 @@ router.post(
       const newUser = new User({
         email,
         password: hashedPassword,
-        role: "store", // Default to 'store' for new users
+        role: role || "store", // Use the provided role or default to "store"
       });
       await newUser.save();
 
-      res.json({ message: "Branch user registered successfully", email });
+      res.json({ message: "User registered successfully", email });
     } catch (err) {
       res.status(500).json({ message: "Server error" });
     }
   }
 );
 
-// Get all users (admin only)
-router.get("/users", checkRole(["admin"]), async (req, res) => {
+// Get all users with 2FA status (admin only)
+router.get("/admin/users", checkRole(["admin"]), async (req, res) => {
   try {
-    const users = await User.find().select("email role -_id"); // Only return email and role
-    res.json(users);
+    // Fetch all users with email, role, and totpSecret fields
+    const users = await User.find().select("email role totpSecret -_id");
+
+    // Map users to include 2FA status
+    const usersWith2FAStatus = users.map((user) => ({
+      email: user.email,
+      role: user.role,
+      has2FA: !!user.totpSecret, // Check if TOTP secret exists
+    }));
+
+    res.json(usersWith2FAStatus);
+  } catch (err) {
+    console.error("Error fetching users:", err); // Log the error
+    res.status(500).json({ message: "Failed to fetch users. Please try again." });
+  }
+});
+
+// Revoke 2FA for a user (admin only)
+router.post("/admin/revoke-2fa", checkRole(["admin"]), async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Clear the TOTP secret
+    user.totpSecret = undefined;
+    await user.save();
+
+    res.json({ message: "2FA revoked successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Change password for a user (admin only)
+router.post("/admin/change-password", checkRole(["admin"]), [
+  body("email").isEmail().withMessage("Invalid email format"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { email, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Hash the new password and update the user
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
