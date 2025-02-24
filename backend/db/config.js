@@ -1,14 +1,11 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.ATLAS_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ MongoDB Connected');
+    await mongoose.connect(process.env.ATLAS_URI);
+    console.log("✅ MongoDB Connected");
   } catch (err) {
-    console.error('❌ MongoDB Connection Error:', err);
+    console.error("❌ MongoDB Connection Error:", err);
     process.exit(1);
   }
 };

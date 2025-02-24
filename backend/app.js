@@ -1,25 +1,27 @@
-//app.js
-const express = require('express');
+const express = require("express");
 const app = express();
-const cors = require('cors');
+const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
-const { connectDB } = require('./db/config');
+const { connectDB } = require("./db/config");
 const authRoutes = require("./routes/auth");
-require('dotenv').config();  // Load environment variables
+require("dotenv").config(); // Load environment variables
 
-// Connect to the database
+// ✅ Fix: Tell Express to trust Render's proxy
+app.set("trust proxy", 1);
+
+// ✅ Fix: Remove deprecated MongoDB options
 connectDB();
 
 // CORS configuration
 const corsOptions = {
     origin: process.env.FRONTEND_URL,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id'],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
     credentials: true,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
 };
 app.use(cors(corsOptions));
 
@@ -28,16 +30,24 @@ app.use(helmet());
 app.use(mongoSanitize());
 app.use(xss());
 
-// Rate limiting to prevent abuse
+// ✅ Optional: Exclude self-pings from rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
     max: 100, 
-    message: "Too many requests from this IP, please try again later."
+    message: "Too many requests from this IP, please try again later.",
 });
-app.use(limiter);
+app.use((req, res, next) => {
+    if (req.path === "/ping") return next(); // Bypass rate limiting for self-ping
+    limiter(req, res, next);
+});
 
 // JSON parsing middleware
 app.use(express.json());
+
+// ✅ Optional: Add a /ping route for self-pinging
+app.get("/ping", (req, res) => {
+    res.status(200).send("Ping successful");
+});
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
