@@ -9,10 +9,10 @@ const { connectDB } = require("./db/config");
 const authRoutes = require("./routes/auth");
 require("dotenv").config(); // Load environment variables
 
-// ✅ Fix: Tell Express to trust Render's proxy
+// Tell Express to trust Render's proxy
 app.set("trust proxy", 1);
 
-// ✅ Fix: Remove deprecated MongoDB options
+// connect to database
 connectDB();
 
 // CORS configuration
@@ -30,7 +30,7 @@ app.use(helmet());
 app.use(mongoSanitize());
 app.use(xss());
 
-// ✅ Optional: Exclude self-pings from rate limiting
+// Optional: Exclude self-pings from rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
     max: 100, 
